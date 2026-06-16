@@ -1,4 +1,13 @@
 require("dotenv").config();
+// Temporary debug — remove after fixing
+if (!process.env.GOOGLE_CLIENT_ID) {
+  console.error("❌ GOOGLE_CLIENT_ID is not loaded! Check your .env file.");
+  process.exit(1);
+}
+console.log(
+  "✅ Google Client ID loaded:",
+  process.env.GOOGLE_CLIENT_ID.slice(0, 10) + "...",
+);
 console.log("CLIENT ID:", process.env.GOOGLE_CLIENT_ID);
 console.log("CLIENT SECRET:", process.env.GOOGLE_CLIENT_SECRET);
 const express = require("express");
@@ -7,7 +16,6 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const session = require("express-session");
 const db = require("./config/db");
-require("dotenv").config();
 const path = require("path");
 const productRoutes = require("./routes/productRoutes");
 const brandRoutes = require("./routes/brandRoutes");
@@ -59,13 +67,14 @@ passport.deserializeUser(async (id, done) => {
   const [rows] = await db.query("SELECT * FROM users WHERE id=?", [id]);
   done(null, rows[0]);
 });
-
+console.log("Callback URL:", "http://localhost:5000/api/auth/google/callback");
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "http://localhost:5000/api/auth/google/callback",
+      scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
